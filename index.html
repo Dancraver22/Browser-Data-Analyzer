@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DataFlow - Premium Data Analysis</title>
+  <meta name="description" content="A powerful, private, browser-based data cleaning and analysis tool for Excel and CSV datasets.">
+  
+  <!-- Fonts & Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="styles.css">
+
+  <!-- Libraries for Data and Viz -->
+  <!-- SheetJS for reading/writing Excel/CSV -->
+  <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+  <!-- Chart.js for visualization -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+  <header>
+    <h1>DataFlow</h1>
+    <p class="subtitle">Intelligent data cleaning and analysis, right in your browser.</p>
+  </header>
+
+  <div class="container">
+    
+    <!-- Upload Section -->
+    <div id="upload-panel" class="panel">
+      <div id="dropzone" class="dropzone">
+        <i class="fa-solid fa-cloud-arrow-up"></i>
+        <h3>Drag & Drop your dataset</h3>
+        <p>Supports .xlsx, .xls, and .csv files</p>
+        <input type="file" id="file-input" accept=".xlsx, .xls, .csv">
+        
+        <div style="margin-top: 2rem;">
+          <p style="margin-bottom: 0.5rem; font-size: 0.9em; text-transform: uppercase; letter-spacing: 1px;">Or import from Google Sheets</p>
+          <div style="display: flex; gap: 0.5rem; justify-content: center; max-width: 500px; margin: 0 auto;">
+            <input type="text" id="g-sheet-url" placeholder="Paste public Google Sheet link here..." style="flex: 1; padding: 0.75rem 1rem; border-radius: 10px; border: 1px solid var(--border-color); background: rgba(0,0,0,0.2); color: white; outline: none;">
+            <button id="btn-import-sheet" class="primary"><i class="fa-solid fa-link"></i> Import</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dashboard Section -->
+    <div id="dashboard" class="dashboard panel">
+      
+      <!-- Sidebar Tools -->
+      <aside class="controls-sidebar">
+        <div class="file-info" style="margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border-color);">
+          <div class="file-name" id="display-filename"><i class="fa-solid fa-table"></i> dataset.csv</div>
+          <p class="stat-label" id="display-rows" style="margin-top: 0.5rem;">0 rows • 0 columns</p>
+        </div>
+
+        <div class="control-group">
+          <h4>Data Cleaning</h4>
+          <button id="btn-drop-nulls" title="Remove rows that contain empty values">
+            <i class="fa-solid fa-broom"></i> Remove Empty Rows
+          </button>
+          <button id="btn-drop-dupes" title="Remove exact duplicate rows">
+            <i class="fa-solid fa-copy"></i> Remove Duplicates
+          </button>
+          <button id="btn-fill-nulls" title="Replace empty numerical cells with 0, and text with 'Unknown'">
+            <i class="fa-solid fa-fill-drip"></i> Fill Missing Values
+          </button>
+        </div>
+
+        <div class="control-group" style="margin-top: auto;">
+          <h4>Actions</h4>
+          <button id="btn-export" class="primary">
+            <i class="fa-solid fa-download"></i> Export Clean Data
+          </button>
+          <button id="btn-reset" class="danger">
+            <i class="fa-solid fa-rotate-left"></i> Start Over
+          </button>
+        </div>
+      </aside>
+
+      <!-- Main Visual Area -->
+      <main class="data-view">
+        
+        <div class="tabs">
+          <button class="tab active" data-tab="data-tab-content">Data Preview</button>
+          <button class="tab" data-tab="stats-tab-content">Summary & Stats</button>
+          <button class="tab" data-tab="chart-tab-content">Visualizations</button>
+        </div>
+
+        <!-- Data Preview Tab -->
+        <div id="data-tab-content" class="tab-content active">
+          <div class="table-container">
+            <table id="data-table">
+              <thead><tr id="table-head"></tr></thead>
+              <tbody id="table-body"></tbody>
+            </table>
+          </div>
+          <p style="margin-top: 1rem; color: var(--text-muted); font-size: 0.85rem; text-align: right;">Showing top 100 rows</p>
+        </div>
+
+        <!-- Statistics Tab -->
+        <div id="stats-tab-content" class="tab-content">
+          <div class="stats-grid">
+            <div class="stat-card">
+              <span class="stat-label">Total Rows</span>
+              <span class="stat-value" id="stat-rows">0</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-label">Total Columns</span>
+              <span class="stat-value" id="stat-cols">0</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-label">Missing Values</span>
+              <span class="stat-value" id="stat-missing" style="color: var(--danger)">0</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-label">Estimated Dupes</span>
+              <span class="stat-value" id="stat-dupes" style="color: #fbbf24">0</span>
+            </div>
+          </div>
+          
+          <div class="table-container">
+            <table id="column-stats-table">
+              <thead>
+                <tr>
+                  <th>Column Name</th>
+                  <th>Data Type</th>
+                  <th>Empty Count</th>
+                  <th>Unique Values</th>
+                </tr>
+              </thead>
+              <tbody id="column-stats-body"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Charts Tab -->
+        <div id="chart-tab-content" class="tab-content">
+          <div style="display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap;">
+            <select id="chart-type" style="padding: 0.5rem; background: rgba(0,0,0,0.2); color: white; border: 1px solid var(--border-color); border-radius: 8px;">
+              <option value="bar">Bar Chart</option>
+              <option value="line">Line Chart</option>
+              <option value="scatter">Scatter Plot</option>
+              <option value="pie">Pie Chart</option>
+            </select>
+            <select id="chart-x" style="padding: 0.5rem; background: rgba(0,0,0,0.2); color: white; border: 1px solid var(--border-color); border-radius: 8px;">
+              <option value="">Select X Axis...</option>
+            </select>
+            <select id="chart-y" style="padding: 0.5rem; background: rgba(0,0,0,0.2); color: white; border: 1px solid var(--border-color); border-radius: 8px;">
+              <option value="">Select Y Axis...</option>
+            </select>
+            <button id="btn-draw-chart" class="primary" style="padding: 0.5rem 1rem;">Draw</button>
+          </div>
+          
+          <div class="chart-container">
+            <canvas id="main-chart"></canvas>
+          </div>
+        </div>
+
+      </main>
+
+    </div>
+
+  </div>
+
+  <div id="loader">
+    <div class="spinner"></div>
+    <h3 id="loader-text">Processing your data...</h3>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
