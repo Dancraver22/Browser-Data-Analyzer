@@ -34,12 +34,5 @@ Since DataFlow requires no backend or build steps, running it is incredibly simp
 2. Open the folder and double-click `index.html` in any modern web browser.
 3. Drop in a dataset and start analyzing!
 
-## 📸 Demo
-
-*(Add screenshots of your application here)*
-- Upload Screen
-- Data Dashboard & Statistics
-- Visualization Studio
-
 ---
 *Created as a demonstration of high-performance client-side Javascript, modern CSS design systems, and data privacy workflows.*
